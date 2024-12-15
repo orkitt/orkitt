@@ -1,0 +1,216 @@
+#!/bin/bash
+
+# Orkitt: Flutter Project Automation Script
+# Developer: AR [16 Dec 24 ] 
+# Usage: ./orkitt <command> 
+# Global: export PATH="$PATH":"$HOME/Android/scripts"
+# Commands:
+#   create <project_name>      - Create a new Flutter project with template
+#   run [platform]             - Run the Flutter project (defaults to 'any')
+#   build <platform>           - Build release APK, IPA, or web
+#   clean                      - Clean build and cache
+#   pub-get                    - Run 'flutter pub get'
+#   help                       - Show this help menu
+
+TEMPLATE_DIR="$HOME/Templates/orkitt_template"  # Directory containing the template
+FLUTTER_CMD="flutter"
+
+create_project() {
+    local project_name=$1
+    local project_path="$PWD/$project_name"
+
+    if [ -z "$project_name" ]; then
+        echo "Error: Project name is required for 'create' command"
+        exit 1
+    fi
+
+    if [ -d "$project_path" ]; then
+        echo "Error: Project '$project_name' already exists in the current directory"
+        exit 1
+    fi
+
+    echo "Creating new Flutter project: $project_name"
+    $FLUTTER_CMD create "$project_path"
+
+    # Navigate into the project directory
+    cd "$project_path" || exit
+
+    echo "Copying template into $project_name/lib..."
+    cp -r "$TEMPLATE_DIR"/* "$project_path/"
+
+    echo "Updating imports to match project name: $project_name"
+    find "$project_path/lib" -type f -name "*.dart" -exec sed -i "s/template_project/$project_name/g" {} \;
+
+    echo "Creating assets directories..."
+    mkdir -p "$project_path/assets/fonts"
+    mkdir -p "$project_path/assets/images"
+    mkdir -p "$project_path/assets/icons"
+    echo "Removing comments from pubspec.yaml..."
+    sed -i '/^\s*#.*$/d' "$project_path/pubspec.yaml"
+    echo "Updating pubspec.yaml with assets and dependencies..."
+    # Commented fonts section
+    echo -e "assets:\n  - assets/images/\n  - assets/fonts/\n  - assets/icons/\n# fonts:\n#   - family: Schyler\n#     fonts:\n#       - asset: fonts/Schyler-Regular.ttf\n#       - asset: fonts/Schyler-Italic.ttf\n#         style: italic" >> "$project_path/pubspec.yaml"
+    echo "Opening..."
+    open_inCode "$project_path" "$project_name"
+}
+# Function to open a project in VS Code
+open_inCode() {
+    local path=$1  # Access the first argument passed to the function
+    local name=$2  # Access the second argument passed to the function (fixed syntax)
+    echo "Opening $name in Visual Studio Code"
+    code "$path"  # Open the directory/project in VS Code
+}
+run_project() {
+    local platform=$1
+    if [ -z "$platform" ]; then
+        platform="any"
+    fi
+
+    # Make sure we're in the correct project directory
+    if [ ! -f "pubspec.yaml" ]; then
+        echo "Error: No pubspec.yaml file found. Please create the project first."
+        exit 1
+    fi
+    case $platform in
+        any)
+            echo "Running Flutter project on conneted device"
+            $FLUTTER_CMD run
+            ;;
+        linux)
+            echo "Running Flutter project on linux..."
+            $FLUTTER_CMD run -d linux
+            ;;
+        web)
+            echo "Running Flutter project on web..."
+            $FLUTTER_CMD run -d chrome
+            ;;
+        *)
+            echo "Error: Unknown platform '$platform'. Use 'any', 'web', or 'linux'."
+            exit 1
+            ;;
+    esac
+}
+
+build_release() {
+    local platform=$1
+    if [ -z "$platform" ]; then
+        echo "Error: Platform (apk, ipa, or web) is required for 'build' command"
+        exit 1
+    fi
+
+    # Make sure we're in the correct project directory
+    if [ ! -f "pubspec.yaml" ]; then
+        echo "Error: No pubspec.yaml file found. Please create the project first."
+        exit 1
+    fi
+
+    case $platform in
+        apk)
+            echo "Building APK release..."
+            $FLUTTER_CMD build apk --release
+            ;;
+        ipa)
+            echo "Building IPA release..."
+            $FLUTTER_CMD build ipa --release
+            ;;
+        web)
+            echo "Building web release..."
+            $FLUTTER_CMD build web --release
+            ;;
+        *)
+            echo "Error: Unknown platform '$platform'. Use 'apk', 'ipa', or 'web'."
+            exit 1
+            ;;
+    esac
+
+    echo "Build completed for $platform."
+}
+
+clean_project() {
+    # Make sure we're in the correct project directory
+    if [ ! -f "pubspec.yaml" ]; then
+        echo "Error: No pubspec.yaml file found. Please create the project first."
+        exit 1
+    fi
+
+    echo "Cleaning Flutter build and cache..."
+    $FLUTTER_CMD clean
+    $FLUTTER_CMD pub cache repair
+    echo "Clean completed!"
+}
+
+pub_get() {
+    # Make sure we're in the correct project directory
+    if [ ! -f "pubspec.yaml" ]; then
+        echo "Error: No pubspec.yaml file found. Please create the project first."
+        exit 1
+    fi
+
+    echo "Running 'flutter pub get'..."
+    $FLUTTER_CMD pub get
+    echo "'flutter pub get' completed!"
+}
+
+display_help() {
+    echo "Orkitt: Flutter Project Automation Script"
+    echo "Usage: ./orkitt <command> [arguments]"
+    echo "Commands:"
+    echo "  create <project_name>      - Create a new Flutter project with template"
+    echo "  run [platform]            - Run the Flutter project (defaults to 'all')"
+    echo "  build <platform>          - Build release APK, IPA, or web"
+    echo "  clean                     - Clean build and cache"
+    echo "  pub-get                  - Run 'flutter pub get'"
+    echo "  help                      - Show this help menu"
+}
+
+# Display menu options
+menu() {
+    echo " 
+█▀█ █▀█ █▄▀ █ ▀█▀ ▀█▀   █▀ ▀█▀ █░█ █▀▄ █ █▀█
+█▄█ █▀▄ █░█ █ ░█░ ░█░   ▄█ ░█░ █▄█ █▄▀ █ █▄█"
+    echo ""
+    echo "Select an option:"
+    echo "1. Create a new project"
+    echo "2. Run Flutter project"
+    echo "3. Build release (APK, IPA, or Web)"
+    echo "4. Clean project"
+    echo "5. Run 'flutter pub get'"
+    echo "6. Display help"
+    echo "7. Exit"
+}
+
+# Main loop for the menu
+while true; do
+    menu
+    read -p "Enter your choice (1-7): " choice
+    case $choice in
+        1)
+            read -p "Enter the project name: " project_name
+            create_project $project_name
+            ;;
+        2)
+            read -p "Enter the platform to run (any, web, or linux): " platform
+            run_project $platform
+            ;;
+        3)
+            read -p "Enter the platform to build (apk, ipa, web): " platform
+            build_release $platform
+            ;;
+        4)
+            clean_project
+            ;;
+        5)
+            pub_get
+            ;;
+        6)
+            display_help
+            ;;
+        7)
+            echo "Exiting script..."
+            break
+            ;;
+        *)
+            echo "Invalid option. Please choose a valid option (1-7)."
+            ;;
+    esac
+done
