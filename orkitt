@@ -162,13 +162,14 @@ display_help() {
     echo "  pub-get                  - Run 'flutter pub get'"
     echo "  help                      - Show this help menu"
 }
-
-# Display menu options
-menu() {
-    echo " 
+#Orkitt Studio
+ echo " 
 █▀█ █▀█ █▄▀ █ ▀█▀ ▀█▀   █▀ ▀█▀ █░█ █▀▄ █ █▀█
 █▄█ █▀▄ █░█ █ ░█░ ░█░   ▄█ ░█░ █▄█ █▄▀ █ █▄█"
     echo ""
+# Display menu options
+menu() {
+    echo "---------------------------------"
     echo "Select an option:"
     echo "1. Create a new project"
     echo "2. Run Flutter project"
