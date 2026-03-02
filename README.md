@@ -53,5 +53,5 @@ When you choose Orkitt, you're not just getting code — you're investing in a s
 
 Have questions or want to discuss your project? We'd love to hear from you!
 
-[💬 Chat on WhatsApp](https://wa.me/01517817282)
-[📧 Send us an Email](mailto:orkitt.dev@gmail.com)
+[💬 Chat on WhatsApp](https://wa.me/+8801300337544)
+[📧 Send us an Email](mailto:support@orkitt.dev)
